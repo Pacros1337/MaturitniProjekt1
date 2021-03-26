@@ -7,8 +7,8 @@ import java.util.Random;
 
 public class Obstacle {
     private Random random;
-    private int obstaclePosition = 180;
-    private int gap = 115;
+    private int obstaclePosition = 200;
+    private int gap = 125;
     private int lowestBound = 150;
     private Vector2 posUp;
     private Vector2 posDown;
@@ -57,6 +57,7 @@ public class Obstacle {
     public void moveObstacle(float x){
         posUp.set(x,random.nextInt(obstaclePosition)+gap+lowestBound);
         posDown.set(x, posUp.y-gap-downTube.getHeight());
+
 
     }
 

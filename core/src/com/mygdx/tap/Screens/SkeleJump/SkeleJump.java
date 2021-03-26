@@ -30,16 +30,18 @@ public class SkeleJump implements Screen {
 
         stage = new Stage(new FitViewport(600, 600));
         //bird = new Texture("bird64.png");
-        ghost = new Ghost(50,100);
-        tube = new Obstacle(150);
+        ghost = new Ghost(10,250);
+        tube = new Obstacle(250);
         obstacles = new Array<Obstacle>();
 
-        //backGround = new Texture("backGround");
+        backGround = new Texture("background.png");
         for (int i = 1; i <= ObstacleCount; i++){
             obstacles.add(new Obstacle(i*(ObstacleDistance + Obstacle.ObstacleWidth)));
+
+
         }
         camera = new OrthographicCamera();
-        camera.setToOrtho(false,600,600);
+        camera.setToOrtho(false, 600,700);
         stage.getViewport().apply();
     }
 
@@ -64,11 +66,16 @@ public class SkeleJump implements Screen {
         camera.position.x =ghost.getPos().x+70;
         for(Obstacle obstacle : obstacles){
             if(camera.position.x - (camera.viewportWidth/2 ) > tube.getPosUp().x + tube.getUpTube().getWidth()){
+                System.out.println("hhh");
                 obstacle.moveObstacle(tube.getPosUp().x + (Obstacle.ObstacleWidth + ObstacleDistance * ObstacleCount));
             }
         }
         camera.update();
         parent.batch.begin();
+
+
+        parent.batch.draw(backGround,camera.position.x -(camera.viewportWidth/2),0);
+
         for(Obstacle obstacle : obstacles){
             parent.batch.draw(tube.getUpTube(), tube.getPosUp().x, tube.getPosUp().y);
             parent.batch.draw(tube.getDownTube(), tube.getPosDown().x, tube.getPosDown().y);
