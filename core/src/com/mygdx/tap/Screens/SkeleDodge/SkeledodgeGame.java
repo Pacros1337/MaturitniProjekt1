@@ -62,6 +62,7 @@ public class SkeledodgeGame implements Screen {
 
         stage = new Stage(new FitViewport(600, 700));
 
+
         skeleton = new Texture("anim.png");
         meteorDrop = new Texture("meteor.png");
         hitStar = new Texture("hit.png");
