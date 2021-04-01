@@ -40,7 +40,7 @@ public class About implements Screen {
         root.setFillParent(true);
         stage.addActor(root);
 
-        Label label = new Label("TAP GAME ALPHA", skin, "play");
+        Label label = new Label("TAP GAME", skin, "play");
         root.add(label).expandX().left().padLeft(30.0f).padTop(30.0f);
 
         root.row();
@@ -52,7 +52,7 @@ public class About implements Screen {
         table.add(label).padTop(50.0f).center();
 
         root.row();
-        Label labelXD = new Label("COMPLETE SIMPLE MINI GAMES", skin);
+        Label labelXD = new Label("3 FUN GAMES", skin);
 
         root.row();
         Label labelXD2 = new Label("CHALLENGE YOURSELF", skin);
@@ -64,7 +64,7 @@ public class About implements Screen {
 
         root.row();
 
-        Label highScoreLabel = new Label("GAME MADE BY PACROS", skin);
+        Label highScoreLabel = new Label("(c) Patrik Pacros Pala", skin);
 
         root.add(highScoreLabel).padTop(50.0f).center();
 

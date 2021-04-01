@@ -1,7 +1,6 @@
 package com.mygdx.tap.Utility;
 
 import com.badlogic.gdx.audio.Music;
-
 public class MusicPlayer {
     public Music muzika;
 
@@ -9,7 +8,6 @@ public class MusicPlayer {
 
     private MusicPlayer() {
     }
-
     public static MusicPlayer vratInstanci() {
         return singleton;
     }

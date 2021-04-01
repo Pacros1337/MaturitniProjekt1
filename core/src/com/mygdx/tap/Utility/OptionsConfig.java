@@ -6,7 +6,6 @@ import com.mygdx.tap.Tap;
 public class OptionsConfig {
     private static final String OptionNames = "tap";
     private static final String OptionMusicVolume = "volume";
-    private static final String OptionSoundOn = "sound.enabled";
     private static final String OptionMusicOn = "music.enabled";
     private static final String PROPERTY_highscore = "highscore";
     private static final String PROPERTY_timeplayed = "time";
@@ -55,15 +54,6 @@ public class OptionsConfig {
 
     public void setMusicOn(boolean musicEnabled) {
         getOptions().putBoolean(OptionMusicOn, musicEnabled);
-        getOptions().flush();
-    }
-
-    public boolean SoundOn() {
-        return getOptions().getBoolean(OptionSoundOn, true);
-    }
-
-    public void setSoundOn(boolean soundEffectsEnabled) {
-        getOptions().putBoolean(OptionSoundOn, soundEffectsEnabled);
         getOptions().flush();
     }
 

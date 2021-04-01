@@ -54,7 +54,6 @@ public class AnimatedSprite {
             set(queue);
         }
     }
-
     // gets the current texture for the frame that is going to be shown
     public TextureRegion getFrame(){
         return region[animation_set.ordinal()][animation_frame];

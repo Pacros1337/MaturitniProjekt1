@@ -12,9 +12,6 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.mygdx.tap.Tap;
@@ -26,8 +23,8 @@ public class SkeledodgeGame implements Screen {
     private final Tap tap;
     private Tap parent;
     OrthographicCamera camera;
-    HighScore scores = HighScore.returnInstance();
-    private Texture skeleton;
+    HighScore highScore = HighScore.returnInstance();
+
     private Texture meteorDrop;
     private Texture hitStar;
     private Texture heart;
@@ -37,20 +34,18 @@ public class SkeledodgeGame implements Screen {
     private Rectangle skeletonRect;
     private Rectangle hitRectangle;
     private Array<Rectangle> meteors = new Array<Rectangle>();;
-    private Array<Float> rotations = new Array<Float>();
-    private Array<Float> spins = new Array<Float>();
+
     private Array<Float> fallspeeds = new Array<Float>();
 
     private String scoreText;
     private String restart = "Tap to return to main menu";
     public float score = 0;
-    private int hitpoints = 10;
+    private int hitpoints = 2;
     private float renderX;
     private float renderY;
     private float lastMeteor;
     private float lastHit = 0.0f;
     private int direction = 1;
-
 
     private BitmapFont bf = new BitmapFont();
     ShapeRenderer sr = new ShapeRenderer();
@@ -63,8 +58,7 @@ public class SkeledodgeGame implements Screen {
         stage = new Stage(new FitViewport(600, 700));
 
 
-        skeleton = new Texture("anim.png");
-        meteorDrop = new Texture("meteor.png");
+        meteorDrop = new Texture("meteorite.png");
         hitStar = new Texture("hit.png");
         heart = new Texture("heart_pixel_art_32x32.png");
         gameover = new Texture("deadskeleton.jpg");
@@ -80,7 +74,7 @@ public class SkeledodgeGame implements Screen {
         skeletonRect.y = 10;
         skeletonRect.height=70;
         skeletonRect.width=40;
-        renderX=100;
+        renderX=100; //value whioch is used to calculate real position of skeleton
         renderY=100;
 
         score(0);
@@ -99,11 +93,9 @@ public class SkeledodgeGame implements Screen {
     public void endgame(float delta) {
         parent.batch.begin();
             parent.batch.draw(gameover,0,0);
-            if(score>scores.getTotal()){
-                scores.addScore(score);
-                scores.setScore(score);
-
-                //parent.screenChanger(Tap.MENUSCREEN);
+            if(score> highScore.getTotal()){
+                highScore.addScore(score);
+                highScore.setScore(score);
             }
 
             bf.draw(parent.batch, scoreText, 10,420);
@@ -111,7 +103,6 @@ public class SkeledodgeGame implements Screen {
             if(Gdx.input.justTouched()){
                 parent.screenChanger(Tap.MENUSCREEN);
             }
-
         parent.batch.end();
     }
 
@@ -129,15 +120,7 @@ public class SkeledodgeGame implements Screen {
         sr.setColor(Color.BROWN);
         sr.begin(ShapeRenderer.ShapeType.Filled);
 
-        /* debug rects */
-//            for (Rectangle meteor : meteors) {
-//                sr.rect(meteor.x, meteor.y,meteor.width, meteor.height);
-//            }
-
             sr.setColor(Color.BROWN);
-            //skeledude hit rect
-//            sr.rect(skeletonRect.x, skeletonRect.y,skeletonRect.width, skeletonRect.height);
-
             //draw ground
             sr.rect(0,0,600,35);
         sr.end();
@@ -163,13 +146,13 @@ public class SkeledodgeGame implements Screen {
                 Rectangle meteor = meteors.get(i);
                 parent.batch.draw(
                     meteorDrop,
-                    meteor.x-6,
-                    meteor.y-6,
+                    meteor.x-5,
+                    meteor.y-5,
                     32,32,
                     64,
                     64,
                     1,1,
-                    rotations.get(i),
+                    0,
                     0,0,
                     meteorDrop.getWidth(),meteorDrop.getHeight(),
                     false,false
@@ -228,11 +211,10 @@ public class SkeledodgeGame implements Screen {
         lastMeteor+=delta;
         if(lastMeteor >= getDifficulty() ) dropMeteor();
 
-        //we need the index to add and remove the speed, rotation etc
-        for(int i = meteors.size-1; i >= 0; --i){
+        //we need the index to add and remove the speed, etc
+        for(int i = meteors.size-1; i >= 0; i--){
             Rectangle meteor = meteors.get(i);
             meteor.y -= (200+fallspeeds.get(i) ) * delta;
-            rotations.set(i, rotations.get(i)+ spins.get(i) );
 
             if(meteor.y < 0) {
                 removeMeteor(i, false);
@@ -244,12 +226,9 @@ public class SkeledodgeGame implements Screen {
             }
         }
 
-
         score(delta);
     }
-
     private void removeMeteor(int i, boolean hit){
-
         if(hit) {
             hitRectangle.set(skeletonRect.x-20, 60, 64,64);
             lastHit = 0.4f; // one second
@@ -262,9 +241,8 @@ public class SkeledodgeGame implements Screen {
         }
 
         meteors.removeIndex(i);
-        rotations.removeIndex(i);
-        spins.removeIndex(i);
         fallspeeds.removeIndex(i);
+
     }
 
     private void dropMeteor() {
@@ -273,11 +251,8 @@ public class SkeledodgeGame implements Screen {
         meteor.y = 700;
         meteor.width = 50;
         meteor.height = 50;
-        System.out.println(scores);
 
-        rotations.add( 0.0f );
         meteors.add(meteor);
-        spins.add(MathUtils.random(5.0f) - 2.5f );
         fallspeeds.add(MathUtils.random(0,400.0f) );
 
         lastMeteor = 0; //reset time to wait for new meteor
@@ -315,18 +290,15 @@ public class SkeledodgeGame implements Screen {
     @Override
     public void dispose() {
         stage.dispose();
-        skeleton.dispose();
         gameover.dispose();
         hitStar.dispose();
         heart.dispose();
         meteorDrop.dispose();
 
     }
-
     @Override
     public void show() {
         Gdx.input.setInputProcessor(stage);
     }
-
 
 }

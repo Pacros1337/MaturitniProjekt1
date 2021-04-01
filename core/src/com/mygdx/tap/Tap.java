@@ -19,7 +19,6 @@ import com.mygdx.tap.Screens.SkeleJump.SkeleJump;
 import com.mygdx.tap.Utility.OptionsConfig;
 import com.mygdx.tap.Utility.TimePlayed;
 
-//import sun.applet.Main;
 
 public class Tap extends Game {
     public SpriteBatch batch;
@@ -33,7 +32,7 @@ public class Tap extends Game {
     public static final int FLAPPYBIRD = 6;
     public static final int BOARDOTD = 7;
 
-    OrthographicCamera camera;
+
     private Menu menu;
     private ChooseGame game;
     private SkeledodgeGame skeledodge;
@@ -44,7 +43,7 @@ public class Tap extends Game {
     private About about;
     public OptionsConfig optionsCfg;
     private Tap parent;
-    //private final Stage stage;
+
 
     MusicPlayer arcade;
     HighScore score;
@@ -133,7 +132,6 @@ public class Tap extends Game {
             Gdx.app.exit();
         }
 
-//        System.out.println(time.getTime());
     }
 
     @Override
@@ -153,7 +151,6 @@ public class Tap extends Game {
                 if (game == null) game = new ChooseGame(this);
                 this.setScreen(game);
                 break;
-
             case OPTIONSCREEN:
                 if (options == null) options = new Options(this);
                 this.setScreen(options);
@@ -174,11 +171,11 @@ public class Tap extends Game {
                 break;
             case BOARDOTD:
                 if (boardofthedead == null) boardofthedead = new BoardOfTheDeadGame(this);
-                this.setScreen(boardofthedead);
+                this.setScreen(new BoardOfTheDeadGame(this));
                 break;
             case FLAPPYBIRD:
                 if (flappyGuy == null) flappyGuy = new SkeleJump(this);
-                this.setScreen(flappyGuy);
+                this.setScreen(new SkeleJump(this));
                 break;
         }
     }

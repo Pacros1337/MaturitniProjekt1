@@ -32,53 +32,63 @@ public class BoardOfTheDeadGame  implements Screen {
     private Texture badgood;
     private String restart = "Tap to return to main menu";
 
+    //This is the array of textures, which holds the icon images from rows and columns
     private TextureRegion[][] icons;
 
+    //See the class source
     private AnimatedSprite skeledude = new AnimatedSprite("anim_birb.png", 92);
 
-    private Rectangle skeletonRect = new Rectangle();;
-    private Rectangle diceRect     = new Rectangle();;
-    private Rectangle hitRect      = new Rectangle();;
+    private Rectangle skeletonRect = new Rectangle();; //character position, size
+    private Rectangle diceRect     = new Rectangle();; //dice position, size is not used
+    private Rectangle hitRect      = new Rectangle();; //the star shows when the dice hits the screen edges
 
+    //the board data, in 0, 1 or 2 to determine which icon from TextureRegion will be drawn and what will it do
     private int[] squares = new int[9*9];
 
-    private String scoreText;
-    private float  score = 0;
-    private int   hitpoints = 3;
-    private int   direction = 1;
-    private int   box = 0;
-    private int   boxview = 1;
-    private float hitTime = 10;
 
-    Vector3 diceSpeed = new Vector3();
-    Vector3 diceStart = new Vector3();
-    float maxLength;
+    private float  score = 0; //not really used
+    private int   hitpoints = 2; //health
+    private int   direction = 1; //1 going right, -1 going left
+    private int   box = 0; //which box on the board is the character sitting in
+    private int   boxview = 1; //how many boxes have we "seen" with the character getting to them
+    private float hitTime = 10; //time in seconds when the dice hit an edge
+
+    Vector3 diceSpeed = new Vector3(); //when mouse dragged, this sets the "speed" on which the dice will fly
+    Vector3 diceStart = new Vector3(); //sets the start of the speed the mouse will throw, on touchin the screen
+    float maxLength; // the diagonal of the bottom,left up to top,right of the screen, determines what is the absolute maximum drag length
 
     private modes   mode = modes.DiceStart;
     private enum  modes{
-        DiceStart, DiceRolling, DiceStop, GuyMoving, BadEvent, GoodEvent
+        DiceStart, //starts throwing the dice, waits for player to touch and drag
+        DiceRolling,  //started throwing, moves the dice all over the screen
+        DiceStop,  //the dice has stopped so we process the next state
+        GuyMoving,  //the character is walking the board
+        BadEvent, // the character is sitting on a box marked as trap
+        GoodEvent // the character is sitting on a power up
     }
 
-    public final static int TYPE_BOARD = 0;
-    public final static int TYPE_TRAP = 1;
+    //constants
+    public final static int TYPE_BOARD   = 0;
+    public final static int TYPE_TRAP    = 1;
     public final static int TYPE_POWERUP = 2;
 
-    public final static int TRAP_BEAR = 0;
-    public final static int TRAP_JAIL = 1;
+    public final static int TRAP_BEAR  = 0;
+    public final static int TRAP_JAIL  = 1;
     public final static int TRAP_SNAKE = 2;
 
     public final static int PUP_HEART  = 0;
     public final static int PUP_SHIELD = 1;
-    public final static int PUP_SWORD = 2;
+    public final static int PUP_SWORD  = 2;
 
 
-    private BitmapFont bf = new BitmapFont();
-    ShapeRenderer sr = new ShapeRenderer();
+    private BitmapFont bf = new BitmapFont(); //debug
+    ShapeRenderer sr = new ShapeRenderer(); //debug
 
     public BoardOfTheDeadGame(Tap tap) {
         parent   = tap;
         this.tap = tap;
 
+        //load images
         stage      = new Stage(new FitViewport(600, 700));
         skeleton   = new Texture("anim.png");
         spookyBg   = new Texture("boardofthedead.jpg");
@@ -89,30 +99,36 @@ public class BoardOfTheDeadGame  implements Screen {
         gameover   = new Texture("deadskeleton.jpg");
         winGame    = new Texture("wingame.png");
 
+        //splits the large image on a grid of 64x64 pixels, setting a 2D array of TextureRegion
         icons = new TextureRegion(boardIcons).split(64,64);
 
-        int bad_size = 25;
+        //we want more traps than powerups
+        int bad_size = 25; // the total boxes that will be a trap
         int bad[] = new int[bad_size];
         for(int i = 0; i != bad_size; i++) {
-            bad[i] = MathUtils.random(0, 9*9);
+            bad[i] = MathUtils.random(0, 9*9); //calculate which box is going to be a trap
         }
 
-        int good_size = 15;
+        int good_size = 15; //total powerups in the board
         int good[] = new int[good_size];
         for(int i = 0; i != good_size; i++) {
-            good[i] = MathUtils.random(0, 9*9);
+            good[i] = MathUtils.random(0, 9*9); //calcs which boxes have powerup
         }
 
+        //the board is a 9x9 tile
         for(int x = 0; x!=9*9; x++){
-            squares[x] = TYPE_BOARD;
+            squares[x] = TYPE_BOARD; //assume we will have a regular walkable board without event
 
+            //check all the trap boxes if they match the box we're initializing
             for(int b = 0; b != bad_size; b++) {
-                if(bad[b] == x){
+                if(bad[b] == x){ //if the trap box is the box we're initing, set it as trap
                     squares[x] = TYPE_TRAP;
                     break;
                 }
             }
 
+            //the trap boxes and the powerups might overlap, in this case we want the powerup to show up instead
+            //so we process same as above
             for(int g = 0; g != good_size; g++) {
                 if(good[g] == x){
                     squares[x] = TYPE_POWERUP;
@@ -120,29 +136,28 @@ public class BoardOfTheDeadGame  implements Screen {
                 }
             }
 
-//            squares[x] = TYPE_POWERUP;
+//            squares[x] = TYPE_POWERUP; //debug
         }
-
         camera = new OrthographicCamera();
         camera.setToOrtho(false,600,700);
 
+        //x 15 and y 10 are to position the character centered on the box position, calculated by hand
         skeletonRect.set(15, 10, 64, 64);
         hitRect.set(0, 0, 64, 64);
 
+        //start with the dice centered in the screen
         diceRect.set(
             (camera.viewportWidth /2.0f) - 32,
             (camera.viewportHeight/2.0f) - 32,
             64,64);
 
-        score();
     }
-
     @Override
     public void render(float delta) {
+        //if hitpoints is negative
         if(hitpoints <= 0) {
-            endgame(delta);
+            endgame(delta); //process end game render
             parent.batch.begin();
-            bf.draw(parent.batch, scoreText, 10,420);
             bf.draw(parent.batch, restart, 100,50);
             if(Gdx.input.justTouched()){
                 parent.screenChanger(Tap.MENUSCREEN);
@@ -151,9 +166,8 @@ public class BoardOfTheDeadGame  implements Screen {
             return;
         }
         if(box>(9*9)-1){
-            wingame(delta);
+            wingame(delta); //process win game render
             parent.batch.begin();
-            bf.draw(parent.batch, scoreText, 10,420);
             bf.draw(parent.batch, restart, 100,50);
             if(Gdx.input.justTouched()){
                 parent.screenChanger(Tap.MENUSCREEN);
@@ -162,13 +176,14 @@ public class BoardOfTheDeadGame  implements Screen {
             return;
         }
 
-        play(delta);
+        play(delta); //process game loop
     }
 
     public void endgame(float delta) {
         parent.batch.begin();
             parent.batch.draw(gameover,0,0);
         parent.batch.end();
+
     }
 
     public void wingame(float delta){
@@ -183,33 +198,38 @@ public class BoardOfTheDeadGame  implements Screen {
         stage.getViewport().apply();
         camera.update();
 
-        updateThings(delta);
+        updateThings(delta); //process all the stuff in the board
 
         parent.batch.setProjectionMatrix(camera.combined);
 
         parent.batch.begin();
             parent.batch.draw(spookyBg,0,0);
 
-            int n = boxview;
-            for(int y= 0; y!= 9; y++){
-                for(int x = 0; x!=9; x++){
+            int n = boxview; //what is the longest we've seen of the board
+            for(int y= 0; y!= 9; y++){ // line of board boxes
+                for(int x = 0; x!=9; x++){ // each box in a line
+                    // n>0 is outside of how many boxes we've seen so far
+                    // y*9+x - the line we're drawing increases in multiples of 9, the width of our board
+                    //   to this we add the number of boxes in the line up to 9
+                    //   then we center its Y position adding 10 from the edge
                     if(n > 0 ) parent.batch.draw(getIcon(TYPE_BOARD,squares[y*9+x]),10+(x*64),y*64);
-                    n--;
+                    n--; //we know how many boxes we can see, so we decrement as we draw each
                 }
             }
 
             parent.batch.draw(skeledude.getFrame(),
                 (direction==-1
-                    ? skeletonRect.x + 62
-                    : skeletonRect.x - 30
+                    ? skeletonRect.x + 62 // if its facing left, we add 62 to try center the image in the box
+                    : skeletonRect.x - 30 // if its facing right, direction == +1
                 ),
                 skeletonRect.y,
-                92*direction,92
+                92*direction,92 //direction is 1 or -1, we make the width -1 to mirror horizontally -> looking lft
             );
 
-            bf.draw(parent.batch, scoreText, 10,690);
 
+            //draw the hit star image
             if(hitTime < 0.2f) parent.batch.draw(hitStar,hitRect.x, hitRect.y, hitRect.width, hitRect.height);
+            //if the character is trapped in the jail trap, draw the jail on top of the character
             if(hasJail){
                 parent.batch.draw(
                 getIcon(TYPE_TRAP, TRAP_JAIL),
@@ -228,6 +248,7 @@ public class BoardOfTheDeadGame  implements Screen {
         sr.begin(ShapeRenderer.ShapeType.Filled);
             drawDice(sr);
 
+            //draws a circle which grows depending how far you drag
             if(mode == modes.DiceStart){
                 sr.setColor(Color.ROYAL);
                 sr.circle(diceStart.x, diceStart.y, diceSpeed.dst(0,0,0)/10);
@@ -235,28 +256,19 @@ public class BoardOfTheDeadGame  implements Screen {
         sr.end();
 
 
-//        sr.begin(ShapeRenderer.ShapeType.Filled);
-//            sr.setColor(Color.RED);
-//            sr.line(
-//                diceStart.x,
-//                diceStart.y,
-//                diceStart.x+diceSpeed.x,
-//                diceStart.y+diceSpeed.y
-//            );//diceSpeed.x, -diceSpeed.y);
-////            sr.line(0,600, diceSpeed.x, -diceSpeed.y);
-////            sr.line(120, 120, diceRect.x, diceRect.y);
-//        sr.end();
-
         parent.batch.begin();
+            //draw the hit star image
             if(hitTime < 0.2f) parent.batch.draw(hitStar,hitRect.x, hitRect.y, hitRect.width, hitRect.height);
-            for(int i=0; i!= hitpoints; i++) parent.batch.draw(heart, 10 + (10*i) + (32*i), 640);
+            for(int i=0; i!= hitpoints; i++) parent.batch.draw(heart, 10 + (10*i) + (32*i), 640); //draw a line of hearts
 
+            //draw the power ups in the corner, all the numbers are calculated by hand
             if(hasSword)  parent.batch.draw(getIcon(TYPE_POWERUP, PUP_SWORD),  camera.viewportWidth-40, camera.viewportHeight-40, 32, 32);
             if(hasShield) parent.batch.draw(getIcon(TYPE_POWERUP, PUP_SHIELD), camera.viewportWidth-80, camera.viewportHeight-40, 32, 32);
             if(hasSnake)  parent.batch.draw(getIcon(TYPE_TRAP,    TRAP_SNAKE), camera.viewportWidth-40, camera.viewportHeight-80, 32, 32);
             if(hasJail)   parent.batch.draw(getIcon(TYPE_TRAP,    TRAP_JAIL),  camera.viewportWidth-80, camera.viewportHeight-80, 32, 32);
 
             if(mode==modes.BadEvent){
+                // draw the character's dialog bubble
                 parent.batch.draw(
                     badgood,
                     skeletonRect.x+32,skeletonRect.y+64,128,64,
@@ -264,23 +276,28 @@ public class BoardOfTheDeadGame  implements Screen {
                     false,false);
 
                 if(trap>=0) {
+                    //make a kind of animation, moving the icon upwards and vanishing
+                    // set color rgba = 1,1,1 becomes the real color, alpha = 0.0 to 1.0 becomes the transparency
+                    // we want to fade out so, as eventTime increases, we substract it from 1.1f which will go from 1.1 to 0.0
                     parent.batch.setColor(1,1,1,1.1f-(eventTime) ); //1.5 is the event time duration
                     parent.batch.draw(
                         getIcon(TYPE_TRAP,trap),
                         skeletonRect.x-20,
-                        skeletonRect.y+10 + (eventTime*64));
-                    parent.batch.setColor(1,1,1,1);
+                        skeletonRect.y+10 + (eventTime*64)); //we start the animation above the character and move it up as much as 1.5 * 64 pixels above
+                    parent.batch.setColor(1,1,1,1); //reset the transparencies
                 }
 
             }
 
             if(mode==modes.GoodEvent){
+                //draw characters dialog bubble
                 parent.batch.draw(
                         badgood,skeletonRect.x+32,skeletonRect.y+64,128,64,
                         0,badgood.getHeight()/2,badgood.getWidth(), badgood.getHeight()/2,
                         false,false);
 
                 if(powerup>=0){
+                    //same as above
                     parent.batch.setColor(1,1,1,1.1f-(eventTime) ); //1.5 is the event time duration
                     parent.batch.draw(
                         getIcon(TYPE_POWERUP,powerup),
@@ -292,17 +309,16 @@ public class BoardOfTheDeadGame  implements Screen {
         parent.batch.end();
     }
 
-
     private TextureRegion getIcon(int type, int index){
         return icons[type][index];
     }
 
     private int   old_box = box; // remembers the last box we step on
     private float old_box_x; // this is meant to be a value between -1 .. 0 .. +1
-    private int   steps;
+    private int   steps; // how many steps have we walked ?
 
     float eventTime;
-    int   snakeSteps;
+    int   snakeSteps; // how many steps will we walk under the effect of the snake
     private void updateThings(float delta){
         //calculate the position of the guy depending on what was the last box it step on
         // 64 is the width of the box, 9.0f is the count of boxes per row
@@ -313,6 +329,7 @@ public class BoardOfTheDeadGame  implements Screen {
         skeletonRect.x = (64*     (old_box % 9.0f)) + 30 + (64*old_box_x);
         skeledude.update(delta);
 
+        //state machine
         switch(mode){
             case BadEvent:
                 badEvent(delta);
@@ -331,66 +348,67 @@ public class BoardOfTheDeadGame  implements Screen {
                 break;
             case DiceStop:
                 if(hasJail){
+                    //trap mode of the jail, we will roll over and over until we get a number higher than 3
+                    // if our dice rolls lower than 3 we take a hit
                     mode = modes.DiceStart;
                     if(number < 3){
                         skeledude.set(AnimatedSprite.Set.Hit, false);
                         hitpoints--;
                     } else {
-                        hasJail = false;
+                        hasJail = false; //afte we roll above 3 we "defeat" the jail
                     }
                 } else {
-                    boxview = Math.max(boxview, box+number+2);
-                    mode    = modes.GuyMoving;
+                    //regular movement
+                    boxview = Math.max(boxview, box+number+2); //box is the current position, number is the dice, 2 is one box for each side between character and number
+                    mode    = modes.GuyMoving; // set state as moving
 
+                    //if we are under the effect of the snake, we go backwards instead
                     if(hasSnake) {
                         moveLeft();
                     } else {
-                        moveRight();
+                        moveRight(); //regular movement
                     }
                 }
                 break;
         }
-
-        score();
     }
 
-    int     powerup   =-1;
+    int     powerup   = -1;
     int     hitAction = 0;
     boolean hasSword  = false;
     boolean hasShield = false;
     void goodEvent(float delta){
-        eventTime+=delta;
+        eventTime+=delta; //add time to our event
         if(eventTime>1.5f){
+            // once the time since start is above 1.5 seconds, we return to the dice throw
             mode      = modes.DiceStart;
-            eventTime = 0;
-            powerup   = -1;
+            eventTime = 0; //clear time
+            powerup   = -1; // clear powerup event animation etc
         }
 
-        eventTime+=delta;
-
+        //flags whether we are running the event or not
         if(powerup<0){
-            powerup   = MathUtils.random(0,2);
-            hitAction = 0;
+            powerup   = MathUtils.random(0,2); //assign a random powerup
+            hitAction = 0; // clear flag
         }
 
         //this might fail in cases where frame rate is too uneven
-        if(eventTime>.7f && hitAction == 0){
-            hitAction = 1;
-            skeledude.set(AnimatedSprite.Set.Attacking, false);
+        if(eventTime>.7f && hitAction == 0){ //wait .7 second and if we havent set the flag
+            hitAction = 1; //we set the flag to prevent running this block twice
+            skeledude.set(AnimatedSprite.Set.Attacking, false); //play animation
 
             switch(powerup){
-                case PUP_HEART : hitpoints++;    break;
-                case PUP_SHIELD: hasShield=true; break;
-                case PUP_SWORD : hasSword =true; break;
+                case PUP_HEART : hitpoints++;    break; //heart increases health
+                case PUP_SHIELD: hasShield=true; break; //shield defends against bear trap
+                case PUP_SWORD : hasSword =true; break; //sword defends against snake
             }
         }
 
-        if(eventTime>1.5f){
+        if(eventTime>1.5f){ //run the event for one and half second
             mode = modes.DiceStart;
-            eventTime = 0;
+            eventTime = 0; //clear flags
             powerup = -1;
         }
-
     }
 
     int trap=-1;
@@ -408,10 +426,9 @@ public class BoardOfTheDeadGame  implements Screen {
         if(eventTime>.7f && hitAction == 0){
             hitAction=1; //prevent entering this block
 
-            AnimatedSprite.Set n = AnimatedSprite.Set.Hit;
-            if(hasSword)  n = AnimatedSprite.Set.Attacking;
-            if(hasShield) n = AnimatedSprite.Set.Attacking;
-            skeledude.set(n, false);
+            AnimatedSprite.Set n = AnimatedSprite.Set.Hit; //assume we're drawing the damage animation
+            if(hasSword || hasShield) n = AnimatedSprite.Set.Attacking; //if we have powerups do the attack instead
+            skeledude.set(n, false); //start animation
 
             switch(trap){
                 case TRAP_BEAR :
@@ -437,6 +454,7 @@ public class BoardOfTheDeadGame  implements Screen {
             }
         }
 
+        //run this event for 1 and half seconds
         if(eventTime>1.5f){
             mode = modes.DiceStart;
             eventTime = 0;
@@ -608,10 +626,6 @@ public class BoardOfTheDeadGame  implements Screen {
 
     };
 
-    private void score(){
-        scoreText =  String.format("%s: %4.2f s:%d n:%d %4d->%1d ss:%d "+(direction > 0 ? "right" : "left"), mode.toString(), score, steps, number, old_box%9, (box%9), snakeSteps );
-//        scoreText =  String.format(Locale.getDefault(), "Score: %2s %d %d b:%d o:%d", mode.toString(), steps, number, box, old_box);
-    }
 
     @Override
     public void resize(int width, int height) {
@@ -636,84 +650,16 @@ public class BoardOfTheDeadGame  implements Screen {
     public void dispose() {
         stage.dispose();
         skeleton.dispose();
+        winGame.dispose();
+        gameover.dispose();
 
     }
 
     @Override
     public void show() {
         Gdx.input.setInputProcessor(new InputAdapter() {
-            @Override
-            public boolean keyDown(int keycode) {
-                return false;
-            }
 
-            @Override
-            public boolean keyUp(int keycode) {
-                if(mode == modes.GuyMoving) return GuyMovingKeyUp(keycode);
-                if(mode == modes.DiceStart) return diceStartKeyUp(keycode);
-                return false;
-            }
 
-            public boolean diceStartKeyUp(int keycode){
-                switch(keycode){
-                    case Input.Keys.A:
-                        if(number>0) number--;
-                        return true;
-                    case Input.Keys.S:
-                        if(number<5) number++;
-                        return true;
-                    case Input.Keys.ENTER:
-                        touchDown((int)camera.viewportWidth/2, (int)camera.viewportHeight/2, 1, 1);
-                        touchDragged((int)camera.viewportWidth/2, (int)camera.viewportHeight/2, 1);
-                        touchUp((int)camera.viewportWidth/2, (int)camera.viewportHeight/2, 1, 1);
-                        return true;
-                }
-                return true;
-            }
-
-            public boolean GuyMovingKeyUp(int keycode) {
-                if(keycode==Input.Keys.L){
-                    old_box=box;
-                    old_box_x=0;
-                    return true;
-                }
-
-                if(box!=old_box) {
-                    Gdx.app.log("keyup", "box != oldbox");
-                    return true;
-                }
-
-                switch(keycode){
-                    case Input.Keys.A:
-                        if(box>0) {
-                            box--;
-                            direction=-1;
-                            skeledude.set(AnimatedSprite.Set.Running, true);
-                            return true;
-                        }
-                        break;
-                    case Input.Keys.S:
-                        box++;
-                        direction=1;
-                        skeledude.set(AnimatedSprite.Set.Running, true);
-                        return true;
-                    case Input.Keys.D:
-                        //prevent restarting attack
-                        if(skeledude.set() == AnimatedSprite.Set.Attacking) return true;
-                        skeledude.set(AnimatedSprite.Set.Attacking, false);
-                        return true;
-                    case Input.Keys.F:
-                        if(skeledude.set() == AnimatedSprite.Set.Hit) return true;
-                        skeledude.set(AnimatedSprite.Set.Hit, false);
-                        return true;
-                }
-                return false;
-            }
-
-            @Override
-            public boolean keyTyped(char character) {
-                return false;
-            }
 
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
@@ -748,15 +694,6 @@ public class BoardOfTheDeadGame  implements Screen {
                 return true;
             }
 
-            @Override
-            public boolean mouseMoved(int screenX, int screenY) {
-                return false;
-            }
-
-            @Override
-            public boolean scrolled(int amount) {
-                return false;
-            }
         });
 
     }

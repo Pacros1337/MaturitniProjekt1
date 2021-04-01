@@ -30,7 +30,6 @@ public class HallOfFame implements Screen {
     }
     @Override
     public void show() {
-        //  System.out.println("Time elapsed in seconds = " + ((System.currentTimeMillis() -Tap.startTime )) / 1000);
 
         stage.clear();
         Gdx.input.setInputProcessor(stage);
@@ -41,7 +40,7 @@ public class HallOfFame implements Screen {
         root.setFillParent(true);
         stage.addActor(root);
 
-        Label label = new Label("TAP GAME ALPHA", skin, "play");
+        Label label = new Label("TAP GAME", skin, "play");
         root.add(label).expandX().left().padLeft(30.0f).padTop(30.0f);
 
         root.row();

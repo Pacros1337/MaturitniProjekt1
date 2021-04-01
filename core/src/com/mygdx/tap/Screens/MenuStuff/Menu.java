@@ -44,7 +44,7 @@ public class Menu implements Screen {
         root.setFillParent(true);
         stage.addActor(root);
 
-        Label label = new Label("TAP GAME TESxT ", skin, "play");
+        Label label = new Label("TAP GAME ", skin, "play");
         root.add(label).expandX().left().padLeft(30.0f).padTop(30.0f);
 
         root.row();
@@ -88,8 +88,6 @@ public class Menu implements Screen {
         playButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                System.out.println("Pls");
-
                 parent.screenChanger(Tap.GAMESCREEN);
             }
         });

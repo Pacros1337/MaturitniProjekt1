@@ -21,6 +21,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.mygdx.tap.Screens.BoardOfTheDead.BoardOfTheDeadGame;
 import com.mygdx.tap.Tap;
 import com.mygdx.tap.Utility.HighScore;
 import com.mygdx.tap.Utility.TimePlayed;
@@ -64,12 +65,12 @@ public class ChooseGame implements Screen {
         Gdx.input.setInputProcessor(stage);
 
         camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        Skin skin2 = new Skin(Gdx.files.internal("skin/glassy-ui.json"));
+
         Table root = new Table();
         root.setFillParent(true);
         stage.addActor(root);
 
-        Label label = new Label("TAP GAME ALPHA", skin, "play");
+        Label label = new Label("TAP GAME", skin, "play");
 
         root.add(label).expandX().left().padLeft(30.0f).padTop(30.0f);
 
@@ -119,6 +120,7 @@ public class ChooseGame implements Screen {
         boardotd.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+
                 parent.screenChanger(Tap.BOARDOTD);
                 stage.clear();
             }

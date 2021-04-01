@@ -29,17 +29,12 @@ public class Options implements Screen {
     private final Stage stage;
     private Tap parent;
     OrthographicCamera camera;
-    private Label volumeMusicLabel;
-    private Label musicOnOffLabel;
-    private Label soundOnOffLabel;
+
     private MusicPlayer arcade = MusicPlayer.vratInstanci();
-    HighScore score = HighScore.returnInstance();
-    TimePlayed time = TimePlayed.returnInstance();
+
 
     @Override
     public void show() {
-        //  System.out.println("Time elapsed in seconds = " + ((System.currentTimeMillis() - Tap.startTime)) / 1000);
-
         stage.clear();
         Gdx.input.setInputProcessor(stage);
         camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -48,7 +43,7 @@ public class Options implements Screen {
         root.setFillParent(true);
         stage.addActor(root);
 
-        Label label = new Label("TAP GAME ALPHA", skin, "play");
+        Label label = new Label("TAP GAME", skin, "play");
         root.add(label).expandX().left().padLeft(30.0f).padTop(30.0f);
 
         root.row();
@@ -71,9 +66,6 @@ public class Options implements Screen {
             }
         });
 
-        volumeMusicLabel = new Label(null, skin);
-        musicOnOffLabel = new Label(null, skin);
-        soundOnOffLabel = new Label(null, skin);
 
         final CheckBox musicCheckBox = new CheckBox("MUSIC", skin);
         root.row();
@@ -93,45 +85,13 @@ public class Options implements Screen {
                     arcade.muzika.setVolume(parent.optionsCfg.getMusicVolume());
                     arcade.muzika.setLooping(true);
                     arcade.muzika.play();
-                    System.out.println("played");
-                    parent.getPreferences().saveHighScore();
-                    //  parent.getPreferences().saveTime();
-                    System.out.println(score.getTotal());
-
-
                 } else {
                     arcade.muzika.stop();
-                    System.out.println("stopped");
+
                 }
             }
         });
         root.add(musicCheckBox).padTop(35f);
-        root.add(musicOnOffLabel);
-        final CheckBox soundCheckBox = new CheckBox("SOUND", skin);
-        root.row();
-        soundCheckBox.setChecked(parent.getPreferences().SoundOn());
-        soundCheckBox.addListener(new EventListener() {
-
-            @Override
-
-            public boolean handle(Event event) {
-
-                boolean on = soundCheckBox.isChecked();
-                parent.getPreferences().setSoundOn(on);
-                return false;
-            }
-        });
-
-        soundCheckBox.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                System.out.println("hi");
-
-            }
-        });
-        root.add(soundCheckBox).padTop(35f);
-        root.add(soundOnOffLabel);
-
 
         root.row();
         table = new Table();
@@ -172,7 +132,6 @@ public class Options implements Screen {
     @Override
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
-
     }
 
     @Override
@@ -193,7 +152,6 @@ public class Options implements Screen {
     @Override
     public void dispose() {
         stage.dispose();
-
     }
 
 }
